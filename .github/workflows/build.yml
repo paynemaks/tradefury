@@ -1,0 +1,45 @@
+name: Build and Artifact Creation
+
+# Define when this workflow should run:
+on:
+  # Run automatically when code is pushed to the master branch
+  push:
+    branches: [ master ]
+  # Allows manual triggering from the 'Actions' tab in the GitHub repository interface
+  workflow_dispatch:
+
+jobs:
+  build_app:
+    # Use a standard Linux runner environment
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository Code
+      # Uses the official action to download the code from the repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js Environment (Version 22)
+      # Sets up the specified Node.js version
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        # Enables caching of npm dependencies for faster subsequent runs
+        cache: 'npm' 
+
+    - name: Install Dependencies
+      # CRITICAL STEP: We use --legacy-peer-deps to bypass the ERESOLVE error 
+      # encountered previously with 'react-scripts' and 'typescript' versions.
+      run: npm install --legacy-peer-deps
+
+    - name: Run Production Build
+      # Executes the script defined in package.json to create the optimized build [5].
+      # This step handles TypeScript compilation (24.7% of code) and Tailwind CSS optimization [6, 7].
+      run: npm run build
+
+    - name: Upload Production Artifact
+      # Uploads the 'build' folder (the result of 'npm run build') [5].
+      # This allows you to download the compiled application bundle to deploy it elsewhere.
+      uses: actions/upload-artifact@v4
+      with:
+        name: tradefury-wotlk-production-build
+        path: build/
